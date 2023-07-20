@@ -1,0 +1,28 @@
+[2023-07-15T16:09:56.557+0000] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: simple_test_dag.run_foo_function scheduled__2023-07-15T00:00:00+00:00 [queued]>
+[2023-07-15T16:09:56.567+0000] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: simple_test_dag.run_foo_function scheduled__2023-07-15T00:00:00+00:00 [queued]>
+[2023-07-15T16:09:56.567+0000] {taskinstance.py:1308} INFO - Starting attempt 1 of 1
+[2023-07-15T16:09:56.580+0000] {taskinstance.py:1327} INFO - Executing <Task(PythonOperator): run_foo_function> on 2023-07-15 00:00:00+00:00
+[2023-07-15T16:09:56.586+0000] {standard_task_runner.py:57} INFO - Started process 1379 to run task
+[2023-07-15T16:09:56.589+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'simple_test_dag', 'run_foo_function', 'scheduled__2023-07-15T00:00:00+00:00', '--job-id', '3', '--raw', '--subdir', 'DAGS_FOLDER/main.py', '--cfg-path', '/tmp/tmpti2tay2f']
+[2023-07-15T16:09:56.591+0000] {standard_task_runner.py:85} INFO - Job 3: Subtask run_foo_function
+[2023-07-15T16:09:56.636+0000] {task_command.py:410} INFO - Running <TaskInstance: simple_test_dag.run_foo_function scheduled__2023-07-15T00:00:00+00:00 [running]> on host b884ba659609
+[2023-07-15T16:09:56.721+0000] {taskinstance.py:1547} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='simple_test_dag' AIRFLOW_CTX_TASK_ID='run_foo_function' AIRFLOW_CTX_EXECUTION_DATE='2023-07-15T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2023-07-15T00:00:00+00:00'
+[2023-07-15T16:12:07.780+0000] {taskinstance.py:1824} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/operators/python.py", line 181, in execute
+    return_value = self.execute_callable()
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/operators/python.py", line 198, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/main.py", line 20, in foo
+    password="*3}dgY"
+  File "/home/airflow/.local/lib/python3.7/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: connection to server at "10.1.108.29", port 5432 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+[2023-07-15T16:12:07.793+0000] {taskinstance.py:1350} INFO - Marking task as FAILED. dag_id=simple_test_dag, task_id=run_foo_function, execution_date=20230715T000000, start_date=20230715T160956, end_date=20230715T161207
+[2023-07-15T16:12:07.808+0000] {standard_task_runner.py:109} ERROR - Failed to execute job 3 for task run_foo_function (connection to server at "10.1.108.29", port 5432 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+; 1379)
+[2023-07-15T16:12:07.852+0000] {local_task_job_runner.py:225} INFO - Task exited with return code 1
+[2023-07-15T16:12:07.873+0000] {taskinstance.py:2653} INFO - 0 downstream tasks scheduled from follow-on schedule check
