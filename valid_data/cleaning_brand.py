@@ -1,54 +1,43 @@
-import csv
 import psycopg2
 import psycopg2.extras as extras
 import pandas as pd
+from dev import brand_table, conn, Clean
+
+cl = Clean(brand_table, "brand.csv")
 
 class Clean_brand:
 
-    def remove_duplicate(self, lst):
-        s = set()
-        for i in lst:
-            s.add(tuple(i))
-        res = []
-        for brand_id, brand in s:
-            res.append([brand_id, brand])
-        return res
+    @staticmethod
+    def send_to_error_table(lst):
 
-    def send_to_error_table(self):
         cur = conn.cursor()
-        extras.execute_values(cur, "INSERT INTO dds.error (error_id, tabble, detail) VALUES %s", )
+        extras.execute_values(cur,
+                              "INSERT INTO dds.error_brand (brand_id, brand, detail_info) VALUES %s",
+                              lst)
+        conn.commit()
 
     def clean(self):
-        with open('brand.csv', 'r', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            next(reader)
-            reader = list(reader)
-            no_duplicate_reader = self.remove_duplicate(reader)
-            n = len(no_duplicate_reader)
-            PK_brand_id = set()
-            for i in range(n):
-                # brand_id = no_duplicate_reader[i][0]
-                # brand = no_duplicate_reader[i][1]
-                try:
-                    no_duplicate_reader[i][0] = int(no_duplicate_reader[i][0])
-                except:
-                    no_duplicate_reader[i][0], no_duplicate_reader[i][1] = int(no_duplicate_reader[i][1]), no_duplicate_reader[i][0]
+        no_duplicate_reader = cl.clean_duplicate()
+        i = 0
+        n = len(no_duplicate_reader)
+        while i < n:
+            # brand_id = no_duplicate_reader[i][0]
+            # brand = no_duplicate_reader[i][1]
+            try:
+                no_duplicate_reader[i][0] = int(no_duplicate_reader[i][0])
+            except:
+                no_duplicate_reader[i][0], no_duplicate_reader[i][1] = int(no_duplicate_reader[i][1]), no_duplicate_reader[i][0]
 
-                if no_duplicate_reader[i][0] not in PK_brand_id:
-                    PK_brand_id.add(no_duplicate_reader[i][0])
-                else:
-                    continue
+            i += 1
 
-                brand = no_duplicate_reader[i][1]
-                if brand is None:
-                    no_duplicate_reader[i][1] = "Не определен"
+        error_batch = cl.clean_pk_duplicates(no_duplicate_reader)
+        self.send_to_error_table(error_batch)
+
         df = pd.DataFrame(no_duplicate_reader)
         df.to_csv('cleaned_brand.csv', index=False, header=False)
 
-def execute_values(conn, df):
+def execute(conn, df):
     tuples = [tuple(x) for x in df.to_numpy()]
-
-    #cols = ','.join(list(df.columns))
     # SQL query to execute
     query = "INSERT INTO dds.brand (brand_id, brand) VALUES %s"
     cursor = conn.cursor()
@@ -63,17 +52,10 @@ def execute_values(conn, df):
     print("the dataframe is inserted")
     cursor.close()
 
-conn = psycopg2.connect(
-    host="10.1.108.29",
-    database="internship_10_db",
-    user="interns_10",
-    password="*3}dgY"
-)
-
 clb = Clean_brand()
 clb.clean()
 
 # this two commands run ONLY after clb.clean, because class Clean_brand creates a cleaned csv file: cleaned_brand.csv
-df = pd.read_csv('cleaned_brand.csv')
-
-execute_values(conn, df)
+if __name__ == "__main__":
+    df = pd.read_csv('cleaned_brand.csv')
+    execute(conn, df)
