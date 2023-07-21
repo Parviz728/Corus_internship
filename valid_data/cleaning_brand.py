@@ -30,7 +30,7 @@ class Clean_brand:
 
             i += 1
 
-        error_batch = cl.clean_pk_duplicates(no_duplicate_reader)
+        error_batch, no_duplicate_reader = cl.clean_pk_duplicates(no_duplicate_reader)
         self.send_to_error_table(error_batch)
 
         df = pd.DataFrame(no_duplicate_reader)

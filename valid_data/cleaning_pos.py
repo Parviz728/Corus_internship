@@ -21,10 +21,10 @@ class Clean_pos:
         for i in range(len(no_duplicate_reader)):
             no_duplicate_reader[i] = no_duplicate_reader[i][0].split(';')
 
-        error_batch = cl.clean_empties(no_duplicate_reader)
+        error_batch, no_duplicate_reader = cl.clean_empties(no_duplicate_reader)
         self.send_to_error_table(error_batch)
 
-        error_batch = cl.clean_pk_duplicates(no_duplicate_reader)
+        error_batch, no_duplicate_reader = cl.clean_pk_duplicates(no_duplicate_reader)
         self.send_to_error_table(error_batch)
 
         i = 0

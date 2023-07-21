@@ -26,10 +26,10 @@ class Clean_stock:
             no_duplicate_reader[i][0] = dt
             i += 1
 
-        error_batch = cl.clean_empties(no_duplicate_reader)
+        error_batch, no_duplicate_reader = cl.clean_empties(no_duplicate_reader)
         self.send_to_error_table(error_batch)
 
-        error_batch = cl.clean_pk_duplicates(no_duplicate_reader)
+        error_batch, no_duplicate_reader = cl.clean_pk_duplicates(no_duplicate_reader)
         self.send_to_error_table(error_batch)
 
         i = 0

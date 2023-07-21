@@ -15,7 +15,7 @@ class Clean_product:
 
     def clean(self):
         no_duplicate_reader = cl.clean_duplicate()
-        error_batch = cl.clean_pk_duplicates(no_duplicate_reader)
+        error_batch, no_duplicate_reader = cl.clean_pk_duplicates(no_duplicate_reader)
         self.send_to_error_table(error_batch)
 
         i = 0

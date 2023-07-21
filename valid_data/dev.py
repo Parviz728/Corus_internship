@@ -182,18 +182,39 @@ class Clean:
         n = len(no_duplicate_reader)
         while i < n:
             if '' in no_duplicate_reader[i]:
+                message = "пропущен"
                 for index, value in enumerate(no_duplicate_reader[i]):
                     if value == '':
                         no_duplicate_reader[i][index] = "Не определено"
-                    elif isinstance(value, float) and value < 0.0:
-                        no_duplicate_reader[i][index] = "Не определено"
-                no_duplicate_reader[i].append(f"пропущено {self.table_name.index_value[index]}")
+                    try:
+                        value = float(value)
+                        if isinstance(value, float) or isinstance(value, int):
+                            if value < 0:
+                                no_duplicate_reader[i][index] = "Некорректно определено"
+                                message = "пропущен и отрицателен"
+                    except:
+                        pass
+                no_duplicate_reader[i].append(f"{message} {self.table_name.index_value[index]}")
                 error_batch.append(no_duplicate_reader[i])
                 del no_duplicate_reader[i]
                 i -= 1
                 n -= 1
+            else:
+                for index, value in enumerate(no_duplicate_reader[i]):
+                    try:
+                        value = float(value)
+                        if isinstance(value, float) or isinstance(value, int):
+                            if value < 0:
+                                no_duplicate_reader[i][index] = "Некорректно определено"
+                                no_duplicate_reader[i].append(f"отрицателен {self.table_name.index_value[index]}")
+                                error_batch.append(no_duplicate_reader[i])
+                                del no_duplicate_reader[i]
+                                i -= 1
+                                n -= 1
+                    except:
+                        pass
             i += 1
-        return error_batch
+        return error_batch, no_duplicate_reader
 
     def clean_pk_duplicates(self, no_duplicate_reader):
         PK_container = set()
@@ -212,7 +233,7 @@ class Clean:
                 i -= 1
                 n -= 1
             i += 1
-        return error_batch
+        return error_batch, no_duplicate_reader
 
 
 
