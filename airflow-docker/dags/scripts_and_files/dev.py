@@ -11,12 +11,12 @@ PASSWORD = "*3}dgY"
 DATABASES = {"developer": "internship_10_db", "client": "internship_sources"}
 conn = psycopg2.connect(user=USER, password=PASSWORD, host=HOST, database=DATABASES["developer"])
 conn_client = psycopg2.connect(user=USER, password=PASSWORD, host=HOST, database=DATABASES["client"])
-encodes = {"/opt/airflow/dags/scripts_and_files/brand.csv": "utf-8",
-           "/opt/airflow/dags/scripts_and_files/category.csv": "utf-8",
-           "/opt/airflow/dags/scripts_and_files/product.csv": "utf-8",
-           "/opt/airflow/dags/scripts_and_files/stock.csv": "utf-8",
-           "/opt/airflow/dags/scripts_and_files/transaction.csv": "utf-8",
-           "/opt/airflow/dags/scripts_and_files/stores.csv": "cp1251",
+encodes = {"brand.csv": "utf-8",
+           "category.csv": "utf-8",
+           "product.csv": "utf-8",
+           "stock.csv": "utf-8",
+           "transaction.csv": "utf-8",
+           "stores.csv": "cp1251",
            "/opt/airflow/dags/scripts_and_files/pos.csv": "cp1251"}
 
 engine = create_engine("postgresql+psycopg2://interns_10:*3}dgY@10.1.108.29:5432/internship_10_db")

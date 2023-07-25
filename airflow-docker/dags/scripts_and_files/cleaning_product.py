@@ -8,7 +8,7 @@ sql = "COPY (SELECT * FROM sources.product) TO STDOUT WITH CSV DELIMITER ';'"
 with open("product.csv", "w", encoding="UTF-8") as file:
     cur_client.copy_expert(sql, file)
 
-cl = Clean(product_table, "/opt/airflow/dags/scripts_and_files/product.csv")
+cl = Clean(product_table, "product.csv")
 
 class Clean_product:
 
@@ -32,6 +32,23 @@ class Clean_product:
         while i < n:
             category_id = no_duplicate_reader[i][2]
             if (category_id,) not in category_ids:
+                no_duplicate_reader[i].append("Ошибка ссылочной целостности")
+                error_batch.append(no_duplicate_reader[i])
+                del no_duplicate_reader[i]
+                i -= 1
+                n -= 1
+            i += 1
+        self.send_to_error_table(error_batch)
+
+        i = 0
+        n = len(no_duplicate_reader)
+        cur = conn.cursor()
+        cur.execute(f"SELECT brand_id from dds.brand")
+        brand_ids = set(cur.fetchall())
+        error_batch = []
+        while i < n:
+            brand_id = no_duplicate_reader[i][4]
+            if (brand_id,) not in brand_ids:
                 no_duplicate_reader[i].append("Ошибка ссылочной целостности")
                 error_batch.append(no_duplicate_reader[i])
                 del no_duplicate_reader[i]

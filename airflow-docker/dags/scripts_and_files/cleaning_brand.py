@@ -8,7 +8,7 @@ sql = "COPY (SELECT * FROM sources.brand) TO STDOUT WITH CSV DELIMITER ';'"
 with open("brand.csv", "w", encoding="UTF-8") as file:
     cur_client.copy_expert(sql, file)
 
-cl = Clean(brand_table, "/opt/airflow/dags/scripts_and_files/brand.csv")
+cl = Clean(brand_table, "brand.csv")
 
 class Clean_brand:
 
