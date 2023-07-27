@@ -39,6 +39,11 @@ class Store(Base):
     pos = Column(String(30), primary_key=True)
     pos_name = Column(String(255))
 
+    index_value = {0: "pos", 1: "pos_name"}
+    indexes_to_check_for_empty = []
+    PK_indexes = [0]  # индексы Primary key атрибутов
+    FK_indexes = {}  # индексы Foreign key атрибутов
+
     def __repr__(self):
         return f"Store(pos = {self.pos}, pos_name = {self.pos_name}"
 
@@ -49,8 +54,9 @@ class Category(Base):
     category_name = Column(String(255))
 
     index_value = {0: "category_id", 1: "category_name"}
-    indexes_to_check_for_empty = None
-    PK_indexes = [0]  # индекс Primary key атрибута
+    indexes_to_check_for_empty = []
+    PK_indexes = [0]  # индексы Primary key атрибутов
+    FK_indexes = {} # индексы Foreign key атрибутов
 
     def __repr__(self) -> str:
         return f"Category(category_id = {self.category_id}, category_name = {self.category_name}"
@@ -62,8 +68,9 @@ class Brand(Base):
     brand = Column(String(255))
 
     index_value = {0: "brand_id", 1: "brand"}
-    indexes_to_check_for_empty = None
-    PK_indexes = [0] # индекс Primary key атрибута
+    indexes_to_check_for_empty = []
+    PK_indexes = [0] # индексы Primary key атрибутов
+    FK_indexes = {}  # индексы Foreign key атрибутов
 
     def __repr__(self):
         return f"Brand(brand_id = {self.brand_id}, brand = {self.brand}"
@@ -78,8 +85,9 @@ class Product(Base):
     brand_id = Column(Integer(), ForeignKey("brand.brand_id"))
 
     index_value = {0: "product_id", 1: "name_short", 2: "category_id", 3: "pricing_line_id", 4: "brand_id"}
-    indexes_to_check_for_empty = None
-    PK_indexes = [0]  # индекс Primary key атрибута
+    indexes_to_check_for_empty = []
+    PK_indexes = [0]  # индексы Primary key атрибутов
+    FK_indexes = {2: ("category", "category_id"), 4: ("brand", "brand_id")}  # индексы Foreign key атрибутов
 
     def __repr__(self) -> str:
         return f"Product(id = {self.product_id}, name = {self.name}, category = {self.category}, brand = {self.brand})"
@@ -96,6 +104,7 @@ class Stock(Base):
     index_value = {0: "available_on", 1: "product_id", 2: "pos", 3: "available_quantity", 4: "cost_per_item"}
     indexes_to_check_for_empty = [1, 3, 4]
     PK_indexes = [0, 1, 2]
+    FK_indexes = {1: ("product", "product_id"), 2: ("stores", "pos")}  # индексы Foreign key атрибутов
 
     def __repr__(self):
         return f"Stock(available_on = {self.available_on}, " \
@@ -108,11 +117,12 @@ class Pos(Base):
     __tablename__ = "pos"
 
     transaction_id = Column(String(50), primary_key=True)
-    pos = Column(String(30))
+    pos = Column(String(30), ForeignKey("stores.pos"))
 
     index_value = {0: "transaction_id", 1: "pos"}
     indexes_to_check_for_empty = [1]
     PK_indexes = [0]
+    FK_indexes = {1: ("stores", "pos")}  # индексы Foreign key атрибутов
 
     def __repr__(self):
         return f"Pos(transaction_id = {self.transaction_id}, pos = {self.pos}"
@@ -131,6 +141,7 @@ class Transaction(Base):
     index_value = {0: "transaction_id", 1: "product_id", 2: "recorded_on", 3: "quantity", 4: "price", 5: "price_full", 6: "order_type_id"}
     indexes_to_check_for_empty = [3, 4]
     PK_indexes = [0, 1]
+    FK_indexes = {0: ("pos", "transaction_id"), 1: ("product", "product_id")}  # индексы Foreign key атрибутов
 
 stores_table = Store()
 pos_table = Pos()
@@ -217,6 +228,28 @@ class Clean:
                 PK_container.add(keys)
             else:
                 no_duplicate_reader[i].append(f"Ошибка первичного ключа")
+                error_batch.append(no_duplicate_reader[i])
+                del no_duplicate_reader[i]
+                i -= 1
+                n -= 1
+            i += 1
+        return error_batch, no_duplicate_reader
+
+    def make_fk_connection(self, no_duplicate_reader, fk_key, connection_table, connection_attribute):
+        i = 0
+        n = len(no_duplicate_reader)
+        cur = conn.cursor()
+        cur.execute(f"SELECT {connection_attribute} from dds.{connection_table}")
+        values = set(cur.fetchall())
+        error_batch = []
+        while i < n:
+            val = no_duplicate_reader[i][fk_key]
+            try:
+                val = int(val)
+            except:
+                pass
+            if (val,) not in values:
+                no_duplicate_reader[i].append("Ошибка ссылочной целостности")
                 error_batch.append(no_duplicate_reader[i])
                 del no_duplicate_reader[i]
                 i -= 1

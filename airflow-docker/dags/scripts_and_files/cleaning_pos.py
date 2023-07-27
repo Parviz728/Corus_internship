@@ -27,22 +27,12 @@ class Clean_pos:
         error_batch, no_duplicate_reader = cl.clean_pk_duplicates(no_duplicate_reader)
         self.send_to_error_table(error_batch)
 
-        i = 0
-        n = len(no_duplicate_reader)
-        cur = conn.cursor()
-        cur.execute(f"SELECT pos from dds.stores")
-        poss = set(cur.fetchall())
-        error_batch = []
-        while i < n:
-            pos = no_duplicate_reader[i][1]
-            if (pos,) not in poss:
-                no_duplicate_reader[i].append("Ошибка ссылочной целостности")
-                error_batch.append(no_duplicate_reader[i])
-                del no_duplicate_reader[i]
-                i -= 1
-                n -= 1
-            i += 1
-        self.send_to_error_table(error_batch)
+        for fk_key in cl.table_name.FK_indexes:
+            error_batch, no_duplicate_reader = cl.make_fk_connection(no_duplicate_reader=no_duplicate_reader,
+                                                                     fk_key=fk_key,
+                                                                     connection_table=cl.table_name.FK_indexes[fk_key][0],
+                                                                     connection_attribute=cl.table_name.FK_indexes[fk_key][1])
+            self.send_to_error_table(error_batch)
 
         df = pd.DataFrame(no_duplicate_reader)
         df.to_csv('cleaned_pos.csv', index=False, header=False)

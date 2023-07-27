@@ -4,7 +4,8 @@ import pandas as pd
 from dev import category_table, conn, conn_client, Clean
 
 cur_client = conn_client.cursor()
-sql = "COPY (SELECT * FROM sources.category) TO STDOUT WITH CSV DELIMITER ';'"
+
+sql = "COPY (SELECT * FROM sources.category) TO STDOUT WITH CSV DELIMITER ','"
 with open("category.csv", "w", encoding="UTF-8") as file:
     cur_client.copy_expert(sql, file)
 

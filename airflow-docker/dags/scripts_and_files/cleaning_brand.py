@@ -4,7 +4,8 @@ import pandas as pd
 from dev import brand_table, conn, conn_client, Clean
 
 cur_client = conn_client.cursor()
-sql = "COPY (SELECT * FROM sources.brand) TO STDOUT WITH CSV DELIMITER ';'"
+
+sql = "COPY (SELECT * FROM sources.brand) TO STDOUT WITH CSV DELIMITER ','"
 with open("brand.csv", "w", encoding="UTF-8") as file:
     cur_client.copy_expert(sql, file)
 
