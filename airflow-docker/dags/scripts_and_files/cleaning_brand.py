@@ -5,14 +5,15 @@ from dev import brand_table, conn, conn_client, Clean
 
 cur_client = conn_client.cursor()
 
+# загрузка данных заказчика из sources
 sql = "COPY (SELECT * FROM sources.brand) TO STDOUT WITH CSV DELIMITER ','"
 with open("brand.csv", "w", encoding="UTF-8") as file:
     cur_client.copy_expert(sql, file)
-
 cl = Clean(brand_table, "brand.csv")
 
 class Clean_brand:
 
+# отправление в таблицу ошибок
     @staticmethod
     def send_to_error_table(lst):
 
@@ -22,6 +23,7 @@ class Clean_brand:
                               lst)
         conn.commit()
 
+# функция очистки
     def clean(self):
         no_duplicate_reader = cl.clean_duplicate()
         i = 0
@@ -40,8 +42,9 @@ class Clean_brand:
         self.send_to_error_table(error_batch)
 
         df = pd.DataFrame(no_duplicate_reader)
-        df.to_csv('cleaned_brand.csv', index=False, header=False)
+        df.to_csv('cleaned_brand.csv', index=False, header=False) # формирование очищенного csv
 
+# вставка в Базу данных
 def execute_brand(conn, df):
     tuples = [tuple(x) for x in df.to_numpy()]
     # SQL query to execute

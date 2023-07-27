@@ -3,6 +3,7 @@ import psycopg2
 from sqlalchemy import create_engine, event, MetaData, ForeignKey, Column, Integer, String, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
 
+# config
 Base = declarative_base()
 PORT = 5432
 HOST = "10.1.108.29"
@@ -20,7 +21,7 @@ encodes = {"brand.csv": "utf-8",
            "/opt/airflow/dags/scripts_and_files/pos.csv": "cp1251"}
 
 engine = create_engine("postgresql+psycopg2://interns_10:*3}dgY@10.1.108.29:5432/internship_10_db")
-
+# ивент для изменения создания сессии и подключения на специализацию сессии
 @event.listens_for(engine, "connect", insert=True)
 def set_search_path(dbapi_connection, connection_record):
     existing_autocommit = dbapi_connection.autocommit
@@ -30,9 +31,10 @@ def set_search_path(dbapi_connection, connection_record):
     cursor.close()
     dbapi_connection.autocommit = existing_autocommit
 
+# connection и медаданные
 connection = engine.connect()
 metadata = MetaData()
-
+# модели таблиц
 class Store(Base):
     __tablename__ = "stores"
 
@@ -143,6 +145,7 @@ class Transaction(Base):
     PK_indexes = [0, 1]
     FK_indexes = {0: ("pos", "transaction_id"), 1: ("product", "product_id")}  # индексы Foreign key атрибутов
 
+# объекты моделей
 stores_table = Store()
 pos_table = Pos()
 transaction_table = Transaction()
@@ -151,12 +154,14 @@ brand_table = Brand()
 category_table = Category()
 product_table = Product()
 
+#универсальный класс очистки таблиц
 class Clean:
 
     def __init__(self, table_name, file_name: str):
         self.table_name = table_name
         self.file_name = file_name
 
+# удаление полных дублей
     @staticmethod
     def remove_duplicate(lst):
         s = set()
@@ -175,7 +180,7 @@ class Clean:
             no_duplicate_reader = self.remove_duplicate(reader) #устраняем полные дубли
             return no_duplicate_reader
 
-
+# удаление пропусков и некорректных данных
     def clean_empties(self, no_duplicate_reader):
         error_batch = []
         i = 0
@@ -194,7 +199,7 @@ class Clean:
                                 message = "пропущен и отрицателен"
                     except:
                         pass
-                no_duplicate_reader[i].append(f"{message} {self.table_name.index_value[index]}")
+                no_duplicate_reader[i].append(f"{message} {self.table_name.index_value[index]}") # добавление сообщения об ошибке
                 error_batch.append(no_duplicate_reader[i])
                 del no_duplicate_reader[i]
                 i -= 1
@@ -216,6 +221,7 @@ class Clean:
             i += 1
         return error_batch, no_duplicate_reader
 
+# удаление повторяющихся первичных ключей
     def clean_pk_duplicates(self, no_duplicate_reader):
         PK_container = set()
         i = 0
@@ -235,6 +241,7 @@ class Clean:
             i += 1
         return error_batch, no_duplicate_reader
 
+# корректность внешних ключей
     def make_fk_connection(self, no_duplicate_reader, fk_key, connection_table, connection_attribute):
         i = 0
         n = len(no_duplicate_reader)
