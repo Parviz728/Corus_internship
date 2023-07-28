@@ -9,8 +9,11 @@ cur_client = conn_client.cursor()
 sql = "COPY (SELECT * FROM sources.brand) TO STDOUT WITH CSV DELIMITER ','"
 with open("brand.csv", "w", encoding="UTF-8") as file:
     cur_client.copy_expert(sql, file)
+
 cl = Clean(brand_table, "brand.csv")
 
+# очистка данных перед вставкой
+cl.clean_before_insert()
 class Clean_brand:
 
 # отправление в таблицу ошибок
