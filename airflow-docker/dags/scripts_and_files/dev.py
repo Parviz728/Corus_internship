@@ -264,4 +264,129 @@ class Clean:
             i += 1
         return error_batch, no_duplicate_reader
 
+    def clean_before_insert(self):
+        cur = conn.cursor()
+        cur.execute('''
+            DROP schema dds CASCADE;
+
+CREATE schema dds;
+
+create table dds.stores (
+  pos VARCHAR(30) PRIMARY KEY,
+  pos_name VARCHAR(255)
+);
+
+create table dds.error_stores (
+  pos VARCHAR(30),
+  pos_name VARCHAR(255),
+  detail_info VARCHAR(255)
+);
+
+create table dds.category (
+  category_id VARCHAR(50) PRIMARY KEY,
+  category_name VARCHAR(255)
+);
+
+
+create table dds.error_category (
+  category_id VARCHAR(50),
+  category_name VARCHAR(255),
+  detail_info VARCHAR(255)
+);
+
+
+create table dds.brand (
+  brand_id serial PRIMARY KEY,
+  brand VARCHAR(255)
+);
+
+
+create table dds.error_brand (
+  brand_id serial,
+  brand VARCHAR(255),
+  detail_info VARCHAR(255)
+);
+
+
+create table dds.product (
+  product_id serial PRIMARY KEY,
+  name_short VARCHAR(255),
+  category_id VARCHAR(50),
+  pricing_line_id VARCHAR(255),
+  brand_id INT,
+  FOREIGN KEY (category_id) REFERENCES dds.category(category_id),
+  FOREIGN KEY (brand_id) REFERENCES dds.brand(brand_id)
+);
+
+
+create table dds.error_product (
+  product_id serial,
+  name_short VARCHAR(255),
+  category_id VARCHAR(50),
+  pricing_line_id VARCHAR(255),
+  brand_id INT,
+  detail_info VARCHAR(255)
+);
+
+
+create table dds.stock (
+  available_on date,
+  product_id serial,
+  pos VARCHAR(30),
+  available_quantity FLOAT,
+  cost_per_item FLOAT,
+  PRIMARY KEY (available_on, product_id, pos),
+  FOREIGN KEY (pos) REFERENCES dds.stores(pos),
+  FOREIGN KEY (product_id) REFERENCES dds.product(product_id)
+);
+
+
+create table dds.error_stock (
+  available_on date,
+  product_id VARCHAR(255),
+  pos VARCHAR(30),
+  available_quantity VARCHAR(255),
+  cost_per_item VARCHAR(255),
+  detail_info VARCHAR(255)
+);
+
+
+
+create table dds.pos (
+  transaction_id VARCHAR(50) PRIMARY KEY,
+  pos VARCHAR(30)
+);
+
+
+create table dds.error_pos (
+  transaction_id VARCHAR(50),
+  pos VARCHAR(30),
+  detail_info VARCHAR(255)
+);
+
+
+create table dds.transaction (
+  transaction_id VARCHAR(50),
+  product_id serial,
+  recorded_on date,
+  quantity FLOAT,
+  price FLOAT,
+  price_full FLOAT,
+  order_type_id VARCHAR(50),
+  PRIMARY KEY (transaction_id, product_id),
+  FOREIGN KEY (product_id) REFERENCES dds.product(product_id)
+);
+
+create table dds.error_transaction (
+  transaction_id VARCHAR(50),
+  product_id serial,
+  recorded_on date,
+  quantity VARCHAR(255),
+  price VARCHAR(255),
+  price_full FLOAT,
+  order_type_id VARCHAR(50),
+  detail_info VARCHAR(255)
+);        
+        ''')
+
 

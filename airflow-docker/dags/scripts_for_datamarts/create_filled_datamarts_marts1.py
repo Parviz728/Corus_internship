@@ -9,6 +9,42 @@ DATABASE = "internship_10_db"
 conn = psycopg2.connect(user=USER, password=PASSWORD, host=HOST, database=DATABASE)
 
 cur = conn.cursor()
+
+cur.execute('''
+DROP schema datamarts CASCADE;
+
+CREATE schema datamarts;
+
+CREATE table datamarts.marts1 (
+  brand VARCHAR(255),
+  category_name VARCHAR(255),
+  pos VARCHAR(30),
+  pos_name VARCHAR(255),
+  name_short VARCHAR(255),
+  transaction_id VARCHAR(50),
+  product_id serial,
+  quantity FLOAT,
+  price FLOAT,
+  amount FLOAT,
+  recorded_on date,
+  UPDATE_DATE date,
+  PRIMARY KEY(transaction_id, product_id)
+);
+
+CREATE TABLE IF NOT EXISTS datamarts.marts2
+(
+    available_on date,
+    product_id serial,
+    name_short VARCHAR(255),
+    pos VARCHAR(30),
+    pos_name VARCHAR(255),
+    available_quantity FLOAT,
+    cost_per_item FLOAT,
+    update_date date,
+    PRIMARY KEY (available_on, product_id, pos)
+);
+''')
+
 cur.execute('''select dds.brand.brand,
 dds.category.category_name,
 dds.stores.pos,
