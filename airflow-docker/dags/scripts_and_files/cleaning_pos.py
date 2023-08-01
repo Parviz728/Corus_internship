@@ -1,6 +1,8 @@
+import sys
 import psycopg2
 import psycopg2.extras as extras
 import pandas as pd
+sys.path.append('/opt/airflow/dags/scripts_and_files')
 from dev import pos_table, conn, Clean
 
 cl = Clean(pos_table, "/opt/airflow/dags/scripts_and_files/pos.csv")
