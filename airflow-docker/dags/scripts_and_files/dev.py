@@ -1,27 +1,15 @@
-import csv
-import psycopg2
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, event, MetaData, ForeignKey, Column, Integer, String, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
+import pandas as pd
 
+load_dotenv()
 # config
 Base = declarative_base()
-PORT = 5432
-HOST = "10.1.108.29"
-USER = "interns_10"
-PASSWORD = "*3}dgY"
-DATABASES = {"developer": "internship_10_db", "client": "internship_sources"}
-conn = psycopg2.connect(user=USER, password=PASSWORD, host=HOST, database=DATABASES["developer"])
-conn_client = psycopg2.connect(user=USER, password=PASSWORD, host=HOST, database=DATABASES["client"])
-encodes = {"brand.csv": "utf-8",
-           "category.csv": "utf-8",
-           "product.csv": "utf-8",
-           "stock.csv": "utf-8",
-           "transaction.csv": "utf-8",
-           "stores.csv": "cp1251",
-           "/opt/airflow/dags/scripts_and_files/pos.csv": "cp1251"}
+engine = create_engine(os.getenv("DB_URL"))
 
-engine = create_engine("postgresql+psycopg2://interns_10:*3}dgY@10.1.108.29:5432/internship_10_db")
-# ивент для изменения создания сессии и подключения на специализацию сессии
+# ивент для изменения создания сессии и подключения на специализацию схемы
 @event.listens_for(engine, "connect", insert=True)
 def set_search_path(dbapi_connection, connection_record):
     existing_autocommit = dbapi_connection.autocommit
@@ -145,40 +133,29 @@ class Transaction(Base):
     PK_indexes = [0, 1]
     FK_indexes = {0: ("pos", "transaction_id"), 1: ("product", "product_id")}  # индексы Foreign key атрибутов
 
-# объекты моделей
-stores_table = Store()
-pos_table = Pos()
-transaction_table = Transaction()
-stock_table = Stock()
-brand_table = Brand()
-category_table = Category()
-product_table = Product()
-
 #универсальный класс очистки таблиц
 class Clean:
 
-    def __init__(self, table_name, file_name: str):
+    def __init__(self, table_name):
         self.table_name = table_name
-        self.file_name = file_name
 
-# удаление полных дублей
-    @staticmethod
-    def remove_duplicate(lst):
+    def clean_duplicate(self, df):
+        reader = list(df)
         s = set()
-        for i in lst:
+        for i in reader:
             s.add(tuple(i))
         res = []
         for val in s:
             res.append(list(val))
         return res
 
-    def clean_duplicate(self):
-        with open(self.file_name, 'r', encoding=encodes[self.file_name]) as file:
-            reader = csv.reader(file)
-            next(reader)
-            reader = list(reader)
-            no_duplicate_reader = self.remove_duplicate(reader) #устраняем полные дубли
-            return no_duplicate_reader
+    def send_to_error_table(self, error_batch, table_name):
+        df_error = pd.DataFrame(error_batch)
+        df_error.to_sql(schema="dds", name=table_name, con=create_engine(os.getenv("DB_URL")), if_exists="append")
+
+    def fill_dds(self, cleaned_list_of_values, table_name):
+        df = pd.DataFrame(cleaned_list_of_values)
+        df.to_sql(schema="dds", name=table_name, con=create_engine(os.getenv("DB_URL")), if_exists="append")
 
 # удаление пропусков и некорректных данных
     def clean_empties(self, no_duplicate_reader):
@@ -245,9 +222,8 @@ class Clean:
     def make_fk_connection(self, no_duplicate_reader, fk_key, connection_table, connection_attribute):
         i = 0
         n = len(no_duplicate_reader)
-        cur = conn.cursor()
-        cur.execute(f"SELECT {connection_attribute} from dds.{connection_table}")
-        values = set(cur.fetchall())
+        df = pd.read_sql(f"SELECT * FROM sources.{connection_table}", con=os.getenv("CLIENT_DB_URL"), index_col=connection_attribute)
+        values = set(df)
         error_batch = []
         while i < n:
             val = no_duplicate_reader[i][fk_key]
@@ -263,130 +239,4 @@ class Clean:
                 n -= 1
             i += 1
         return error_batch, no_duplicate_reader
-
-    def clean_before_insert(self):
-        cur = conn.cursor()
-        cur.execute('''
-            DROP schema dds CASCADE;
-
-CREATE schema dds;
-
-create table dds.stores (
-  pos VARCHAR(30) PRIMARY KEY,
-  pos_name VARCHAR(255)
-);
-
-create table dds.error_stores (
-  pos VARCHAR(30),
-  pos_name VARCHAR(255),
-  detail_info VARCHAR(255)
-);
-
-create table dds.category (
-  category_id VARCHAR(50) PRIMARY KEY,
-  category_name VARCHAR(255)
-);
-
-
-create table dds.error_category (
-  category_id VARCHAR(50),
-  category_name VARCHAR(255),
-  detail_info VARCHAR(255)
-);
-
-
-create table dds.brand (
-  brand_id serial PRIMARY KEY,
-  brand VARCHAR(255)
-);
-
-
-create table dds.error_brand (
-  brand_id serial,
-  brand VARCHAR(255),
-  detail_info VARCHAR(255)
-);
-
-
-create table dds.product (
-  product_id serial PRIMARY KEY,
-  name_short VARCHAR(255),
-  category_id VARCHAR(50),
-  pricing_line_id VARCHAR(255),
-  brand_id INT,
-  FOREIGN KEY (category_id) REFERENCES dds.category(category_id),
-  FOREIGN KEY (brand_id) REFERENCES dds.brand(brand_id)
-);
-
-
-create table dds.error_product (
-  product_id serial,
-  name_short VARCHAR(255),
-  category_id VARCHAR(50),
-  pricing_line_id VARCHAR(255),
-  brand_id INT,
-  detail_info VARCHAR(255)
-);
-
-
-create table dds.stock (
-  available_on date,
-  product_id serial,
-  pos VARCHAR(30),
-  available_quantity FLOAT,
-  cost_per_item FLOAT,
-  PRIMARY KEY (available_on, product_id, pos),
-  FOREIGN KEY (pos) REFERENCES dds.stores(pos),
-  FOREIGN KEY (product_id) REFERENCES dds.product(product_id)
-);
-
-
-create table dds.error_stock (
-  available_on date,
-  product_id VARCHAR(255),
-  pos VARCHAR(30),
-  available_quantity VARCHAR(255),
-  cost_per_item VARCHAR(255),
-  detail_info VARCHAR(255)
-);
-
-
-
-create table dds.pos (
-  transaction_id VARCHAR(50) PRIMARY KEY,
-  pos VARCHAR(30)
-);
-
-
-create table dds.error_pos (
-  transaction_id VARCHAR(50),
-  pos VARCHAR(30),
-  detail_info VARCHAR(255)
-);
-
-
-create table dds.transaction (
-  transaction_id VARCHAR(50),
-  product_id serial,
-  recorded_on date,
-  quantity FLOAT,
-  price FLOAT,
-  price_full FLOAT,
-  order_type_id VARCHAR(50),
-  PRIMARY KEY (transaction_id, product_id),
-  FOREIGN KEY (product_id) REFERENCES dds.product(product_id)
-);
-
-create table dds.error_transaction (
-  transaction_id VARCHAR(50),
-  product_id serial,
-  recorded_on date,
-  quantity VARCHAR(255),
-  price VARCHAR(255),
-  price_full FLOAT,
-  order_type_id VARCHAR(50),
-  detail_info VARCHAR(255)
-);        
-        ''')
-
 
