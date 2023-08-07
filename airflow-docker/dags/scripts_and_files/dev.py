@@ -137,7 +137,7 @@ class Transaction(Base):
 class Clean:
 
     def __init__(self, table_name):
-        self.table_name = table_name
+        self.table_name_object = table_name
 
     def clean_duplicate(self, df):
         reader = list(df)
@@ -176,7 +176,7 @@ class Clean:
                                 message = "пропущен и отрицателен"
                     except:
                         pass
-                no_duplicate_reader[i].append(f"{message} {self.table_name.index_value[index]}") # добавление сообщения об ошибке
+                no_duplicate_reader[i].append(f"{message} {self.table_name_object.index_value[index]}") # добавление сообщения об ошибке
                 error_batch.append(no_duplicate_reader[i])
                 del no_duplicate_reader[i]
                 i -= 1
@@ -188,7 +188,7 @@ class Clean:
                         if isinstance(value, float) or isinstance(value, int):
                             if value < 0:
                                 no_duplicate_reader[i][index] = "Некорректно определено"
-                                no_duplicate_reader[i].append(f"отрицателен {self.table_name.index_value[index]}")
+                                no_duplicate_reader[i].append(f"отрицателен {self.table_name_object.index_value[index]}")
                                 error_batch.append(no_duplicate_reader[i])
                                 del no_duplicate_reader[i]
                                 i -= 1
@@ -206,7 +206,7 @@ class Clean:
         error_batch = []
 
         while i < n:
-            keys = tuple(no_duplicate_reader[i][indexes_to_check] for indexes_to_check in self.table_name.PK_indexes)
+            keys = tuple(no_duplicate_reader[i][indexes_to_check] for indexes_to_check in self.table_name_object.PK_indexes)
             if keys not in PK_container:
                 PK_container.add(keys)
             else:
