@@ -222,7 +222,7 @@ class Clean:
     def make_fk_connection(self, no_duplicate_reader, fk_key, connection_table, connection_attribute):
         i = 0
         n = len(no_duplicate_reader)
-        df = pd.read_sql(f"SELECT * FROM sources.{connection_table}", con=os.getenv("CLIENT_DB_URL"), index_col=connection_attribute)
+        df = pd.read_sql(f"SELECT * FROM sources.{connection_table}", con=create_engine(os.getenv("CLIENT_DB_URL")), index_col=connection_attribute)
         values = set(df)
         error_batch = []
         while i < n:
