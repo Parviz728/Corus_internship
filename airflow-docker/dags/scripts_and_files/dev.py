@@ -151,11 +151,11 @@ class Clean:
 
     def send_to_error_table(self, error_batch, table_name):
         df_error = pd.DataFrame(error_batch)
-        df_error.to_sql(schema="dds", name=table_name, con=create_engine(os.getenv("DB_URL")), if_exists="append")
+        df_error.to_sql(schema="dds", name=table_name, con=engine, if_exists="append")
 
     def fill_dds(self, cleaned_list_of_values, table_name):
         df = pd.DataFrame(cleaned_list_of_values)
-        df.to_sql(schema="dds", name=table_name, con=create_engine(os.getenv("DB_URL")), if_exists="append")
+        df.to_sql(schema="dds", name=table_name, con=engine, if_exists="append")
 
 # удаление пропусков и некорректных данных
     def clean_empties(self, no_duplicate_reader):
